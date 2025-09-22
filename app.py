@@ -14,7 +14,7 @@ def init_db():
                 "CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY, name TEXT, message TEXT)"
             )
 
-# Student form / Homepage
+# Student form
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -22,25 +22,19 @@ def index():
         message = request.form.get("message")
         if message:
             with sqlite3.connect(DB) as conn:
-                conn.execute(
-                    "INSERT INTO messages (name, message) VALUES (?, ?)",
-                    (name, message)
-                )
+                conn.execute("INSERT INTO messages (name, message) VALUES (?, ?)", (name, message))
             return redirect("/")
     return render_template("index.html")
 
 # Admin view
 @app.route("/admin")
-def admin():
+def admin_view():
     with sqlite3.connect(DB) as conn:
         msgs = conn.execute("SELECT name, message FROM messages").fetchall()
     return render_template("admin.html", messages=msgs)
 
-# Example additional route
-@app.route("/existing-route")
-def existing_route():
-    return "This is an existing page"
-
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    # Use Render's port, bind to 0.0.0.0
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
