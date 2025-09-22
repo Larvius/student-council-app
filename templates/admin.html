@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Submitted Messages</title>
+  </head>
+  <body>
+    <h1>Messages</h1>
+    <ul>
+      {% for name, msg in messages %}
+        <li><strong>{{ name }}</strong>: {{ msg }}</li>
+      {% endfor %}
+    </ul>
+  </body>
+</html>
