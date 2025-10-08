@@ -4,25 +4,28 @@ import os
 
 app = Flask(__name__)
 
-DB = "messages.db"
+# Make DB path absolute so it works on Render
+DB = os.path.join(os.path.dirname(__file__), "messages.db")
 
 # Initialize database
 def init_db():
-    if not os.path.exists(DB):
-        with sqlite3.connect(DB) as conn:
-            conn.execute(
-                "CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY, name TEXT, message TEXT)"
-            )
+    with sqlite3.connect(DB) as conn:
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, message TEXT)"
+        )
 
 # Student form
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        name = request.form.get("name", "Anonymous")
+        name = request.form.get("name") or "Anonymous"
         message = request.form.get("message")
         if message:
             with sqlite3.connect(DB) as conn:
-                conn.execute("INSERT INTO messages (name, message) VALUES (?, ?)", (name, message))
+                conn.execute(
+                    "INSERT INTO messages (name, message) VALUES (?, ?)",
+                    (name, message)
+                )
             return redirect("/")
     return render_template("index.html")
 
@@ -30,11 +33,17 @@ def index():
 @app.route("/admin")
 def admin_view():
     with sqlite3.connect(DB) as conn:
-        msgs = conn.execute("SELECT name, message FROM messages").fetchall()
+        msgs = conn.execute("SELECT name, message FROM messages ORDER BY id DESC").fetchall()
     return render_template("admin.html", messages=msgs)
+
+# Optional debug route
+@app.route("/debug")
+def debug():
+    with sqlite3.connect(DB) as conn:
+        data = conn.execute("SELECT * FROM messages").fetchall()
+    return f"<pre>{data}</pre>"
 
 if __name__ == "__main__":
     init_db()
-    # Use Render's port, bind to 0.0.0.0
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)
